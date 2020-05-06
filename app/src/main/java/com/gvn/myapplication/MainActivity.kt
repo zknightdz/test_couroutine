@@ -1,77 +1,65 @@
 package com.gvn.myapplication
 
+import android.app.SearchManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.content_main.*
-import kotlinx.coroutines.*
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
-import retrofit2.await
-import retrofit2.converter.gson.GsonConverterFactory
+import androidx.appcompat.widget.SearchView
+import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Observer
+import com.gvn.myapplication.databinding.ActivityMainBinding
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
 class MainActivity : AppCompatActivity(), OnArticleClickListener {
 
-    private var apiService: ApiService? = null
-    private var adapter: ArticleAdapter? = null
     private var listArticles: ArrayList<Article> = arrayListOf()
 
-    val handler = CoroutineExceptionHandler { _, exception ->
-        Log.d("TAG", "$exception handled !")
+    private val newsViewModel by viewModel<NewsViewModel>()
+    private val binding: ActivityMainBinding by lazy {
+        DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main).apply {
+            lifecycleOwner = this@MainActivity
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        setSupportActionBar(toolbar)
+        setSupportActionBar(binding.toolbar)
+        binding.toolbar.title = "My Application"
 
-        adapter = ArticleAdapter(listArticles, this)
+        binding.adapter = ArticleAdapter(listArticles, this)
 
-        recyclerView.apply {
-            setHasFixedSize(true)
-            layoutManager = LinearLayoutManager(this@MainActivity)
-            adapter = this@MainActivity.adapter
-        }
+        newsViewModel.data.observe(this, Observer {
+            listArticles.clear()
+            listArticles.addAll(it)
+            binding.adapter?.notifyDataSetChanged()
+        })
+    }
 
-        initRetrofit()
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
 
-        GlobalScope.launch(Dispatchers.Main + handler) {
-            val news = fetchData()
-            Log.d("MainActivity", "${news?.totalResults}")
-            news?.articles?.let {
-                listArticles.clear()
-                listArticles.addAll(it)
-                adapter?.notifyDataSetChanged()
+        val searchItem: MenuItem? = menu?.findItem(R.id.action_search)
+        val searchManager = getSystemService(Context.SEARCH_SERVICE) as SearchManager
+        val searchView: SearchView? = searchItem?.actionView as SearchView
+
+        searchView?.setSearchableInfo(searchManager.getSearchableInfo(componentName))
+        searchView?.setOnQueryTextListener(object: SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                query?.let { newsViewModel.fetchData(it) }
+                return false
             }
-        }
-    }
 
-    private fun initRetrofit() {
-        val logging = HttpLoggingInterceptor()
-        logging.setLevel(HttpLoggingInterceptor.Level.BODY)
-        val httpClient = OkHttpClient.Builder()
-        httpClient.addInterceptor(logging)
+            override fun onQueryTextChange(newText: String?): Boolean {
+                return false
+            }
 
-
-        val retrofit = Retrofit.Builder()
-            .baseUrl("http://newsapi.org/v2/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .client(httpClient.build())
-            .build()
-
-        apiService = retrofit.create(ApiService::class.java)
-    }
-
-    private suspend fun fetchData(): NewsResponse? {
-        return GlobalScope.async(Dispatchers.IO) {
-            return@async apiService?.getListNews()?.await()
-        }.await()
+        })
+        return true
     }
 
     override fun onItemClick(view: View, item: Article, position: Int) {
@@ -82,7 +70,7 @@ class MainActivity : AppCompatActivity(), OnArticleClickListener {
     }
 
     companion object {
-        val KEY_URL = "KEY_URL"
+        const val KEY_URL = "KEY_URL"
     }
 
 }
