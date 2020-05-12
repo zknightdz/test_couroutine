@@ -17,8 +17,6 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : AppCompatActivity(), OnArticleClickListener {
 
-    private var listArticles: ArrayList<Article> = arrayListOf()
-
     private val newsViewModel by viewModel<NewsViewModel>()
     private val binding: ActivityMainBinding by lazy {
         DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main).apply {
@@ -31,12 +29,10 @@ class MainActivity : AppCompatActivity(), OnArticleClickListener {
         setSupportActionBar(binding.toolbar)
         binding.toolbar.title = "My Application"
 
-        binding.adapter = ArticleAdapter(listArticles, this)
+        binding.adapter = ArticleAdapter(this)
 
         newsViewModel.data.observe(this, Observer {
-            listArticles.clear()
-            listArticles.addAll(it)
-            binding.adapter?.notifyDataSetChanged()
+            binding.adapter?.updateData(it)
         })
     }
 
