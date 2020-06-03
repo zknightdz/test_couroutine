@@ -387,6 +387,54 @@ When Using async
 			Log.d(TAG, "$exception handled !")
 		}
 
+Fresco sources | off site
+(-)
+- Huge size of library
+- No Callback with View, Bitmap parameters
+- SimpleDraweeView doesn't support wrap_content
+- Huge size of cache
+(+)
+- Pretty fast image loader (for small && medium images)
+- A lot of functionality(streaming, drawing tools, memory management, etc)
+- Possibility to setup directly in xml (for example round corners)
+- GIF support
+- WebP and Animated Webp support
+
+
+Picasso sources | off site
+(-)
+- Slow loading big images from internet into ListView
+(+)
+- Tinny size of library
+- Small size of cache
+- Simple in use
+- UI is not freeze
+- WebP support
+
+
+Glide sources
+
+(-)
+- Big size of library
+(+)
+- Tinny size of cache
+- Simple in use
+- GIF support
+- WebP support
+- Fast loading big images from internet into ListView
+- UI is not freeze
+- BitmapPool to re-use memory and thus lesser GC events
+
+
+Universal Image Loader sources
+
+(-)
+- Limited functionality (limited image processing)
+- Project support has stopped since 27.11.2015
+(+)
+- Tinny size of library
+- Simple in use
+
 
 
 
